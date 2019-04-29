@@ -4,6 +4,7 @@ package cz.habarta.typescript.generator.emitter;
 import cz.habarta.typescript.generator.*;
 import cz.habarta.typescript.generator.compiler.EnumMemberModel;
 import cz.habarta.typescript.generator.compiler.ModelCompiler;
+import cz.habarta.typescript.generator.compiler.Symbol;
 import cz.habarta.typescript.generator.util.Utils;
 import java.io.*;
 import java.text.*;
@@ -214,7 +215,22 @@ public class Emitter implements EmitterExtension.Writer {
         final String staticString = property.modifiers.isStatic ? "static " : "";
         final String readonlyString = property.modifiers.isReadonly ? "readonly " : "";
         final String questionMark = tsType instanceof TsType.OptionalType ? "?" : "";
-        writeIndentedLine(staticString + readonlyString + quoteIfNeeded(property.getName(), settings) + questionMark + ": " + tsType.format(settings) + ";");
+        String formatedTsType = tsType.format(settings);
+        TsType refTsType = null;
+        if ( property.isRefObj ) {
+            Symbol refSymbol = new Symbol("ObjectRef");
+            if (tsType instanceof TsType.ReferenceType)
+                refTsType = new TsType.GenericReferenceType(refSymbol, Arrays.asList(tsType));
+
+            if (tsType instanceof TsType.BasicArrayType) {
+                TsType.GenericReferenceType tempTsType = new TsType.GenericReferenceType(refSymbol, ((TsType.BasicArrayType) tsType).elementType);
+                refTsType = new TsType.BasicArrayType(tempTsType);
+            }
+
+            if ( refTsType != null )
+                formatedTsType = refTsType.format(settings);
+        }
+        writeIndentedLine(staticString + readonlyString + quoteIfNeeded(property.getName(), settings) + questionMark + ": " + formatedTsType + ";");
     }
 
     public static String quoteIfNeeded(String name, Settings settings) {

@@ -11,6 +11,7 @@ public class TsPropertyModel extends TsProperty implements Comparable<TsProperty
     public final TsModifierFlags modifiers;
     public final boolean ownProperty; // property exists directly on the bean, should not be inherited
     public final List<String> comments;
+    public boolean isRefObj = false;
 
     public TsPropertyModel(String name, TsType tsType, TsModifierFlags modifiers, boolean ownProperty, List<String> comments) {
         super(name, tsType);
