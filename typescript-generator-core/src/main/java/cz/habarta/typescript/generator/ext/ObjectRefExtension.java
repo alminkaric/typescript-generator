@@ -14,17 +14,9 @@ import java.util.*;
 public class ObjectRefExtension extends Extension {
 
     private String PERS_OBJ_INTERFACE = "PersistentObjectInterface";
-    private String idField = "UID";
-
+    private String EXCLUDE_TYPES = "excludeTypes";
     private String persistentObjectInterface = "PersistentObject";
-
-
-    public ObjectRefExtension(String persistendObjectInterface) {
-        this.persistentObjectInterface = persistendObjectInterface;
-    }
-
-    public ObjectRefExtension() {
-    }
+    private List<String> excludeTypes = new ArrayList<String>();
 
     @Override
     public EmitterExtensionFeatures getFeatures() {
@@ -35,6 +27,10 @@ public class ObjectRefExtension extends Extension {
     public void setConfiguration(Map<String, String> configuration) throws RuntimeException {
         if (configuration.containsKey(PERS_OBJ_INTERFACE))
             this.persistentObjectInterface = configuration.get(PERS_OBJ_INTERFACE);
+
+        if (configuration.containsKey(EXCLUDE_TYPES)) {
+            excludeTypes = Arrays.asList(configuration.get(EXCLUDE_TYPES).split(",\\s*"));
+        }
     }
 
     @Override
@@ -59,19 +55,21 @@ public class ObjectRefExtension extends Extension {
     private boolean propIsReferenceType(TsPropertyModel prop, TsBeanModel bean) {
 
         TsType tsType = prop.getTsType();
-
-        System.out.println("*********************************");
+        Class<?> actualClass = findClassOfProp(prop, bean);
 
         if (tsType instanceof  TsType.OptionalType)
             tsType = ((TsType.OptionalType) tsType).type;
 
-        Class<?> actualClass = findClassOfProp(prop, bean);
-
-
         if ( tsType instanceof TsType.BasicArrayType)
             actualClass = findClassOfList(prop, bean);
 
-        if (actualClass != null && classImplementsPersistentObjectInterface(actualClass))
+        if (actualClass == null)
+            return false;
+
+        if (isExcludedType(actualClass))
+            return false;
+
+        if (classImplementsPersistentObjectInterface(actualClass))
             return  true;
 
         return false;
@@ -101,21 +99,18 @@ public class ObjectRefExtension extends Extension {
         }
     }
 
-    private boolean hasFieldUid(Class<?> klass) {
-        if (klass == null)
-            return false;
-
-        try {
-            Field field = klass.getDeclaredField(idField);
-            return true;
-        } catch (NoSuchFieldException e) {
-            return false;
+    private boolean classImplementsPersistentObjectInterface(Class<?> klass) {
+        for ( Class<?> classInterface : getAllExtendedOrImplementedTypesRecursively(klass)) {
+            if (classInterface.getName().contains(persistentObjectInterface))
+                return true;
         }
+
+        return false;
     }
 
-    private boolean classImplementsPersistentObjectInterface(Class<?> klass) {
-        for ( Class<?> interfacee : getAllExtendedOrImplementedTypesRecursively(klass)) {
-            if (interfacee.getName().contains(persistentObjectInterface))
+    private boolean isExcludedType(Class<?> klass) {
+        for (String excludedType : excludeTypes) {
+            if (excludedType.equals(klass.getSimpleName()))
                 return true;
         }
 

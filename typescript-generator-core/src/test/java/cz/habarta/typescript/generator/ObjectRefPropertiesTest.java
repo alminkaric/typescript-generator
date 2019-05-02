@@ -3,7 +3,10 @@ package cz.habarta.typescript.generator;
 import cz.habarta.typescript.generator.ext.ObjectRefExtension;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +16,7 @@ public class ObjectRefPropertiesTest {
     public void test() {
         final Settings settings = TestUtils.settings();
         settings.sortDeclarations = true;
-        final ObjectRefExtension objRefExt = new ObjectRefExtension("PersistentObject");
+        final ObjectRefExtension objRefExt = new ObjectRefExtension();
         settings.extensions.add(objRefExt);
         final String output = new TypeScriptGenerator(settings).generateTypeScript(Input.from(Person.class));
         final String expected =
