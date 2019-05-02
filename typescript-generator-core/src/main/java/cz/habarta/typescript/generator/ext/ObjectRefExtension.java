@@ -8,26 +8,33 @@ import cz.habarta.typescript.generator.emitter.*;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 
 public class ObjectRefExtension extends Extension {
 
-    public static final String USE_OBJECT_REF = "useObjectRef";
+    private String PERS_OBJ_INTERFACE = "PersistentObjectInterface";
+    private String idField = "UID";
 
-    private boolean useObjectRef = false;
+    private String persistentObjectInterface = "PersistentObject";
 
-    public ObjectRefExtension() {
+
+    public ObjectRefExtension(String persistendObjectInterface) {
+        this.persistentObjectInterface = persistendObjectInterface;
     }
 
-    public ObjectRefExtension(boolean useObjectRef) {
-        this.useObjectRef = useObjectRef;
+    public ObjectRefExtension() {
     }
 
     @Override
     public EmitterExtensionFeatures getFeatures() {
         return new EmitterExtensionFeatures();
+    }
+
+    @Override
+    public void setConfiguration(Map<String, String> configuration) throws RuntimeException {
+        if (configuration.containsKey(PERS_OBJ_INTERFACE))
+            this.persistentObjectInterface = configuration.get(PERS_OBJ_INTERFACE);
     }
 
     @Override
@@ -50,35 +57,100 @@ public class ObjectRefExtension extends Extension {
     }
 
     private boolean propIsReferenceType(TsPropertyModel prop, TsBeanModel bean) {
-        if (prop.getTsType() instanceof TsType.ReferenceType)
-            return true;
 
-        if ( prop.getTsType() instanceof TsType.BasicArrayType )  {
-            Class<?> propClass = findClassOfProp(prop, bean);
-            return  hasFieldUid(propClass);
-        }
+        TsType tsType = prop.getTsType();
+
+        System.out.println("*********************************");
+
+        if (tsType instanceof  TsType.OptionalType)
+            tsType = ((TsType.OptionalType) tsType).type;
+
+        Class<?> actualClass = findClassOfProp(prop, bean);
+
+
+        if ( tsType instanceof TsType.BasicArrayType)
+            actualClass = findClassOfList(prop, bean);
+
+        if (actualClass != null && classImplementsPersistentObjectInterface(actualClass))
+            return  true;
 
         return false;
     }
 
     private Class<?> findClassOfProp(TsPropertyModel prop, TsBeanModel bean) {
         Field declaredField = null;
+
         try {
             declaredField = bean.getOrigin().getDeclaredField(prop.getName());
-            ParameterizedType genericType = (ParameterizedType) declaredField.getGenericType();
-            Class<?> actualClass = (Class<?>) genericType.getActualTypeArguments()[0];
-            return  actualClass;
+            return declaredField.getType();
         } catch (NoSuchFieldException e) {
             return null;
         }
     }
 
-    private boolean hasFieldUid(Class<?> klass) {
+    private Class<?> findClassOfList(TsPropertyModel prop, TsBeanModel bean) {
+        Field declaredField = null;
+
         try {
-            klass.getDeclaredField("uid");
+            declaredField = bean.getOrigin().getDeclaredField(prop.getName());
+            ParameterizedType pt = (ParameterizedType) declaredField.getGenericType();
+            Class<?> actualClass = (Class<?>) pt.getActualTypeArguments()[0];
+            return actualClass;
+        } catch (NoSuchFieldException | ClassCastException e) {
+            return null;
+        }
+    }
+
+    private boolean hasFieldUid(Class<?> klass) {
+        if (klass == null)
+            return false;
+
+        try {
+            Field field = klass.getDeclaredField(idField);
             return true;
         } catch (NoSuchFieldException e) {
             return false;
         }
     }
+
+    private boolean classImplementsPersistentObjectInterface(Class<?> klass) {
+        for ( Class<?> interfacee : getAllExtendedOrImplementedTypesRecursively(klass)) {
+            if (interfacee.getName().contains(persistentObjectInterface))
+                return true;
+        }
+
+        return false;
+    }
+
+    public static Set<Class<?>> getAllExtendedOrImplementedTypesRecursively(Class<?> clazz) {
+        List<Class<?>> res = new ArrayList<>();
+
+        do {
+            res.add(clazz);
+
+            // First, add all the interfaces implemented by this class
+            Class<?>[] interfaces = clazz.getInterfaces();
+            if (interfaces.length > 0) {
+                res.addAll(Arrays.asList(interfaces));
+
+                for (Class<?> interfaze : interfaces) {
+                    res.addAll(getAllExtendedOrImplementedTypesRecursively(interfaze));
+                }
+            }
+
+            // Add the super class
+            Class<?> superClass = clazz.getSuperclass();
+
+            // Interfaces does not have java,lang.Object as superclass, they have null, so break the cycle and return
+            if (superClass == null) {
+                break;
+            }
+
+            // Now inspect the superclass
+            clazz = superClass;
+        } while (!"java.lang.Object".equals(clazz.getCanonicalName()));
+
+        return new HashSet<Class<?>>(res);
+    }
+
 }

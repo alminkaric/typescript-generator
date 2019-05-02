@@ -5,6 +5,7 @@ import cz.habarta.typescript.generator.*;
 import cz.habarta.typescript.generator.compiler.EnumMemberModel;
 import cz.habarta.typescript.generator.compiler.ModelCompiler;
 import cz.habarta.typescript.generator.compiler.Symbol;
+import cz.habarta.typescript.generator.ext.ObjectRefExtension;
 import cz.habarta.typescript.generator.util.Utils;
 import java.io.*;
 import java.text.*;
@@ -116,6 +117,7 @@ public class Emitter implements EmitterExtension.Writer {
 
     private void emitElements(TsModel model, boolean exportKeyword, boolean declareKeyword) {
         exportKeyword = exportKeyword || forceExportKeyword;
+        emitObjRef();
         emitBeans(model, exportKeyword, declareKeyword);
         emitTypeAliases(model, exportKeyword, declareKeyword);
         emitLiteralEnums(model, exportKeyword, declareKeyword);
@@ -138,6 +140,20 @@ public class Emitter implements EmitterExtension.Writer {
                 }
             }
         }
+    }
+
+    private void emitObjRef() {
+       boolean useObjRef = settings.extensions.stream().anyMatch(emitterExtension -> {
+           return  emitterExtension instanceof ObjectRefExtension;
+       });
+
+       if (useObjRef) {
+           writeIndentedLine("export interface ObjectRef<T> {");
+           indent++;
+           writeIndentedLine("UID: string;");
+           indent--;
+           writeIndentedLine("}");
+       }
     }
 
     private void emitBeans(TsModel model, boolean exportKeyword, boolean declareKeyword) {
@@ -219,11 +235,16 @@ public class Emitter implements EmitterExtension.Writer {
         TsType refTsType = null;
         if ( property.isRefObj ) {
             Symbol refSymbol = new Symbol("ObjectRef");
-            if (tsType instanceof TsType.ReferenceType)
-                refTsType = new TsType.GenericReferenceType(refSymbol, Arrays.asList(tsType));
+            TsType tempType = tsType;
 
-            if (tsType instanceof TsType.BasicArrayType) {
-                TsType.GenericReferenceType tempTsType = new TsType.GenericReferenceType(refSymbol, ((TsType.BasicArrayType) tsType).elementType);
+            if (tsType instanceof  TsType.OptionalType)
+                tempType = ((TsType.OptionalType) tsType).type;
+
+            if (tempType instanceof TsType.ReferenceType)
+                refTsType = new TsType.GenericReferenceType(refSymbol, Arrays.asList(tempType));
+
+            if (tempType instanceof TsType.BasicArrayType) {
+                TsType.GenericReferenceType tempTsType = new TsType.GenericReferenceType(refSymbol, ((TsType.BasicArrayType) tempType).elementType);
                 refTsType = new TsType.BasicArrayType(tempTsType);
             }
 
