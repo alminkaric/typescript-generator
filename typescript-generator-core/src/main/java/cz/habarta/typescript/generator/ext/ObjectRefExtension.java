@@ -101,7 +101,7 @@ public class ObjectRefExtension extends Extension {
 
     private boolean classImplementsPersistentObjectInterface(Class<?> klass) {
         for ( Class<?> classInterface : getAllExtendedOrImplementedTypesRecursively(klass)) {
-            if (classInterface.getName().contains(persistentObjectInterface))
+            if (classInterface.getSimpleName().equals(persistentObjectInterface))
                 return true;
         }
 
