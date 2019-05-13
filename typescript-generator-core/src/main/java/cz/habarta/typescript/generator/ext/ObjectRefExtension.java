@@ -101,7 +101,7 @@ public class ObjectRefExtension extends Extension {
 
     private boolean classImplementsPersistentObjectInterface(Class<?> klass) {
         for ( Class<?> classInterface : getAllExtendedOrImplementedTypesRecursively(klass)) {
-            if (classInterface.getSimpleName().equals(persistentObjectInterface))
+            if (classInterface.getName().equals(persistentObjectInterface))
                 return true;
         }
 
@@ -119,6 +119,8 @@ public class ObjectRefExtension extends Extension {
 
     public static Set<Class<?>> getAllExtendedOrImplementedTypesRecursively(Class<?> clazz) {
         List<Class<?>> res = new ArrayList<>();
+Class.forName()
+        String.class.isAssignableFrom()
 
         do {
             res.add(clazz);

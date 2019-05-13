@@ -17,6 +17,9 @@ public class ObjectRefPropertiesTest {
         final Settings settings = TestUtils.settings();
         settings.sortDeclarations = true;
         final ObjectRefExtension objRefExt = new ObjectRefExtension();
+        Map<String, String> configuration = new HashMap<>();
+        configuration.put("PersistentObjectInterface", PersistentObject.class.getName());
+        objRefExt.setConfiguration(configuration);
         settings.extensions.add(objRefExt);
         final String output = new TypeScriptGenerator(settings).generateTypeScript(Input.from(Person.class));
         final String expected =
