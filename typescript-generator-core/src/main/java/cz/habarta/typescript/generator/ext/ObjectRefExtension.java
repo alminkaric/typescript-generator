@@ -119,9 +119,6 @@ public class ObjectRefExtension extends Extension {
 
     public static Set<Class<?>> getAllExtendedOrImplementedTypesRecursively(Class<?> clazz) {
         List<Class<?>> res = new ArrayList<>();
-Class.forName()
-        String.class.isAssignableFrom()
-
         do {
             res.add(clazz);
 
