@@ -150,7 +150,7 @@ public class Emitter implements EmitterExtension.Writer {
        if (useObjRef) {
            writeIndentedLine("export interface ObjectRef<T> {");
            indent++;
-           writeIndentedLine("UID: string;");
+           writeIndentedLine("uid: string;");
            indent--;
            writeIndentedLine("}");
        }
