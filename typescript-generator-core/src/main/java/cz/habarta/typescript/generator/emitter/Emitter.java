@@ -244,8 +244,12 @@ public class Emitter implements EmitterExtension.Writer {
                 refTsType = new TsType.GenericReferenceType(refSymbol, Arrays.asList(tempType));
 
             if (tempType instanceof TsType.BasicArrayType) {
-                TsType.GenericReferenceType tempTsType = new TsType.GenericReferenceType(refSymbol, ((TsType.BasicArrayType) tempType).elementType);
-                refTsType = new TsType.BasicArrayType(tempTsType);
+                // WD-9087, since OneToMany association is omitted in serializers in webdesk, it should be omitted from generating in typescript as well
+                return;
+
+                // Commented code bellow is just as a reference if there would be a requirement to have a OneToMany back
+                // TsType.GenericReferenceType tempTsType = new TsType.GenericReferenceType(refSymbol, ((TsType.BasicArrayType) tempType).elementType);
+                // refTsType = new TsType.BasicArrayType(tempTsType);
             }
 
             if ( refTsType != null )

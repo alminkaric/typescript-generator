@@ -42,7 +42,7 @@ public class ObjectRefPropertiesTest {
                 "\n" +
                 "interface Person extends PersistentObject {\n" +
                 "    client: ObjectRef<Client>;\n" +
-                "    groups: ObjectRef<Group>[];\n" +
+//                "    groups: ObjectRef<Group>[];\n" +  // WD-9087
                 "    tags: string[];\n" +
                 "    tagsAsList: string[];\n" +
                 "    uid: string;\n" +
